@@ -23,11 +23,13 @@
 // }
 
 // Adding Copy, Clone, Debug means you can freely pass Op values around, print them for tracing, without fighting Rust's ownership rules.
+// Adding Copy, Clone, Debug means you can freely pass Op values around, print them for tracing, without fighting Rust's ownership rules.
 #[derive(Debug, Clone, Copy)]
 enum Operation {
     Push(i64),
     Add,
     Print,
+    Halt,
 }
 
 fn main() {
@@ -36,11 +38,16 @@ fn main() {
         Operation::Push(3),
         Operation::Add,
         Operation::Print,
+        Operation::Halt, // every program must end with Halt
     ];
 
     let mut stack: Vec<i64> = Vec::new();
+    let mut ip: usize = 0; // instruction pointer — starts at 0 (first instruction)
 
-    for instr in program {
+    while ip < program.len() {
+        let instr = program[ip]; // fetch the instruction at current position
+        ip += 1; // move to next instruction immediately
+
         match instr {
             Operation::Push(n) => stack.push(n),
             Operation::Add => {
@@ -48,11 +55,11 @@ fn main() {
                 let a = stack.pop().unwrap();
                 stack.push(a + b);
             }
-
             Operation::Print => {
                 let val = stack.pop().unwrap();
                 println!("{}", val);
             }
+            Operation::Halt => break, // stop the loop cleanly
         }
     }
 }
