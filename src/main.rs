@@ -22,12 +22,21 @@
 //     println!("result: {}", result);
 // }
 
-// Adding Copy, Clone, Debug means you can freely pass Op values around, print them for tracing, without fighting Rust's ownership rules.
-// Adding Copy, Clone, Debug means you can freely pass Op values around, print them for tracing, without fighting Rust's ownership rules.
 #[derive(Debug, Clone, Copy)]
 enum Operation {
+    // Stack manipulation
     Push(i64),
+    Pop,
+    Dup,
+    Swap,
+    // Arithmetic
     Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    Neg,
+    // I/O and control
     Print,
     Halt,
 }
@@ -35,31 +44,79 @@ enum Operation {
 fn main() {
     let program = vec![
         Operation::Push(7),
-        Operation::Push(3),
-        Operation::Add,
+        Operation::Dup,
+        Operation::Mul,
         Operation::Print,
-        Operation::Halt, // every program must end with Halt
+        Operation::Halt,
     ];
 
     let mut stack: Vec<i64> = Vec::new();
-    let mut ip: usize = 0; // instruction pointer — starts at 0 (first instruction)
+    let mut ip: usize = 0;
 
     while ip < program.len() {
-        let instr = program[ip]; // fetch the instruction at current position
-        ip += 1; // move to next instruction immediately
+        let instr = program[ip];
+        ip += 1;
 
         match instr {
             Operation::Push(n) => stack.push(n),
+
+            Operation::Pop => {
+                stack.pop().unwrap(); // discard top value
+            }
+
+            Operation::Dup => {
+                let top = stack.last().unwrap(); // peek without removing
+                stack.push(*top); // push a copy
+            }
+
+            Operation::Swap => {
+                let b = stack.pop().unwrap();
+                let a = stack.pop().unwrap();
+                stack.push(b); // b goes down
+                stack.push(a); // a goes on top
+            }
+
             Operation::Add => {
                 let b = stack.pop().unwrap();
                 let a = stack.pop().unwrap();
                 stack.push(a + b);
             }
+
+            Operation::Sub => {
+                let b = stack.pop().unwrap();
+                let a = stack.pop().unwrap();
+                stack.push(a - b);
+            }
+
+            Operation::Mul => {
+                let b = stack.pop().unwrap();
+                let a = stack.pop().unwrap();
+                stack.push(a * b);
+            }
+
+            Operation::Div => {
+                let b = stack.pop().unwrap();
+                let a = stack.pop().unwrap();
+                stack.push(a / b); // we'll add div-by-zero trap later
+            }
+
+            Operation::Mod => {
+                let b = stack.pop().unwrap();
+                let a = stack.pop().unwrap();
+                stack.push(a % b); // we'll add mod-by-zero trap later
+            }
+
+            Operation::Neg => {
+                let a = stack.pop().unwrap();
+                stack.push(-a); // flip the sign
+            }
+
             Operation::Print => {
                 let val = stack.pop().unwrap();
                 println!("{}", val);
             }
-            Operation::Halt => break, // stop the loop cleanly
+
+            Operation::Halt => break,
         }
     }
 }

@@ -26,3 +26,13 @@ foundation of the fetch-decode-execute cycle that every real VM uses:
 Added `Halt` as an explicit instruction to stop the loop cleanly, since every real
 program needs a defined stopping point. Without it, the VM would just fall off the
 end of the program silently.
+
+4. Added the full ISA (Instruction Set Architecture)
+
+Expanded the `Operation` enum to include all 14 instructions from the spec, grouped by purpose:
+
+- **Stack manipulation** — `Push`, `Pop`, `Dup`, `Swap`
+- **Arithmetic** — `Add`, `Sub`, `Mul`, `Div`, `Mod`, `Neg`
+- **I/O and control** — `Print`, `Halt`
+
+Each instruction is handled in the `match` block inside the execute loop. At this point the VM can run any straight-line arithmetic program — the program is still written directly as a `Vec<Operation>` in Rust, but the machine itself is complete.
