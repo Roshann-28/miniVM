@@ -36,3 +36,15 @@ Expanded the `Operation` enum to include all 14 instructions from the spec, grou
 - **I/O and control** — `Print`, `Halt`
 
 Each instruction is handled in the `match` block inside the execute loop. At this point the VM can run any straight-line arithmetic program — the program is still written directly as a `Vec<Operation>` in Rust, but the machine itself is complete.
+
+5. Added 256 global slots (Load and Store)
+
+Added a `[i64; 256]` array called `globals`, zero-initialized, alongside the stack.
+Two new instructions access it:
+
+- **`Store(slot)`** — pops a value off the stack and saves it into `globals[slot]`
+- **`Load(slot)`** — reads a value from `globals[slot]` and pushes it onto the stack
+
+This gives programs a way to save and reuse values — like variables. The slot number
+is a `u8` (0–255) because the spec allows exactly 256 slots and `u8` naturally
+enforces that range without any extra checks.

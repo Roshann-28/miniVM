@@ -24,34 +24,40 @@
 
 #[derive(Debug, Clone, Copy)]
 enum Operation {
-    // Stack manipulation
     Push(i64),
     Pop,
     Dup,
     Swap,
-    // Arithmetic
     Add,
     Sub,
     Mul,
     Div,
     Mod,
     Neg,
-    // I/O and control
+    Load(u8),  // u8 because slot number is 0-255
+    Store(u8), // u8 because slot number is 0-255
     Print,
     Halt,
 }
 
 fn main() {
     let program = vec![
-        Operation::Push(7),
-        Operation::Dup,
-        Operation::Mul,
-        Operation::Print,
+        Operation::Push(10), // push 10
+        Operation::Store(0), // save in slot 0
+        Operation::Push(20), // push 20
+        Operation::Store(1), // save in slot 1
+        Operation::Load(0),  // load slot 0 → stack: [10]
+        Operation::Load(1),  // load slot 1 → stack: [10, 20]
+        Operation::Add,      // stack: [30]
+        Operation::Print,    // prints 30
         Operation::Halt,
     ];
 
     let mut stack: Vec<i64> = Vec::new();
     let mut ip: usize = 0;
+
+    // 256 global slots, all starting at zero
+    let mut globals: [i64; 256] = [0; 256];
 
     while ip < program.len() {
         let instr = program[ip];
@@ -61,19 +67,19 @@ fn main() {
             Operation::Push(n) => stack.push(n),
 
             Operation::Pop => {
-                stack.pop().unwrap(); // discard top value
+                stack.pop().unwrap();
             }
 
             Operation::Dup => {
-                let top = stack.last().unwrap(); // peek without removing
-                stack.push(*top); // push a copy
+                let top = stack.last().unwrap();
+                stack.push(*top);
             }
 
             Operation::Swap => {
                 let b = stack.pop().unwrap();
                 let a = stack.pop().unwrap();
-                stack.push(b); // b goes down
-                stack.push(a); // a goes on top
+                stack.push(b);
+                stack.push(a);
             }
 
             Operation::Add => {
@@ -97,18 +103,29 @@ fn main() {
             Operation::Div => {
                 let b = stack.pop().unwrap();
                 let a = stack.pop().unwrap();
-                stack.push(a / b); // we'll add div-by-zero trap later
+                stack.push(a / b);
             }
 
             Operation::Mod => {
                 let b = stack.pop().unwrap();
                 let a = stack.pop().unwrap();
-                stack.push(a % b); // we'll add mod-by-zero trap later
+                stack.push(a % b);
             }
 
             Operation::Neg => {
                 let a = stack.pop().unwrap();
-                stack.push(-a); // flip the sign
+                stack.push(-a);
+            }
+
+            Operation::Load(slot) => {
+                // read from globals array, push onto stack
+                stack.push(globals[slot as usize]);
+            }
+
+            Operation::Store(slot) => {
+                // pop from stack, save into globals array
+                let val = stack.pop().unwrap();
+                globals[slot as usize] = val;
             }
 
             Operation::Print => {
