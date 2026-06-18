@@ -48,3 +48,21 @@ Two new instructions access it:
 This gives programs a way to save and reuse values — like variables. The slot number
 is a `u8` (0–255) because the spec allows exactly 256 slots and `u8` naturally
 enforces that range without any extra checks.
+
+6. Added trap handling with Result
+
+Replaced all `.unwrap()` calls with proper error handling using Rust's `Result` type.
+The `run()` function now returns `Result<(), String>` — `Ok(())` on success, or
+`Err(String)` carrying a formatted trap message on failure.
+
+A small helper `trap_err()` builds the message in the exact format the spec requires:
+`trap at ip=0x0003: stack underflow (Pop on empty stack)`
+
+Traps covered:
+
+- **Stack overflow** — pushing onto a full stack (max 1024)
+- **Stack underflow** — popping/operating on too few values
+- **Division by zero** — `Div` or `Mod` with b=0
+
+`main()` handles the result — if `run()` returns an `Err`, it prints to stderr and
+exits with code 1, as the spec requires.
