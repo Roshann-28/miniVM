@@ -40,19 +40,25 @@ enum Operation {
     Halt,
 }
 
-// helper to build trap error strings cleanly
 fn trap_err(ip: usize, msg: &str) -> Result<(), String> {
     Err(format!("trap at ip=0x{:04X}: {}", ip, msg))
 }
 
-fn run(program: Vec<Operation>) -> Result<(), String> {
+// added a `trace: bool` parameter — when true, print debug info each step
+fn run(program: Vec<Operation>, trace: bool) -> Result<(), String> {
     let mut stack: Vec<i64> = Vec::new();
     let mut ip: usize = 0;
     let mut globals: [i64; 256] = [0; 256];
 
     while ip < program.len() {
         let instr = program[ip];
-        let current_ip = ip; // save before advancing for error messages
+        let current_ip = ip;
+
+        // print trace info BEFORE executing the instruction
+        if trace {
+            println!("ip=0x{:04X}  {:?}  stack={:?}", current_ip, instr, stack);
+        }
+
         ip += 1;
 
         match instr {
@@ -179,16 +185,17 @@ fn run(program: Vec<Operation>) -> Result<(), String> {
 
 fn main() {
     let program = vec![
-        Operation::Push(10),
-        Operation::Push(0),
-        Operation::Div, // division by zero
+        Operation::Push(7),
+        Operation::Push(3),
+        Operation::Add,
         Operation::Print,
         Operation::Halt,
     ];
-    // should print: trap at ip=0x0002: division by zero
 
-    // if run() returns an Err, print it and exit with code 1
-    if let Err(e) = run(program) {
+    // hardcoded true for now — later this comes from a real --trace flag
+    let trace = true;
+
+    if let Err(e) = run(program, trace) {
         eprintln!("{}", e);
         std::process::exit(1);
     }
