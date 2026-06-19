@@ -81,3 +81,23 @@ Traps covered:
 
 `main()` handles the result — if `run()` returns an `Err`, it prints to stderr and
 exits with code 1, as the spec requires.
+
+7. Added --trace mode
+
+Added a `trace: bool` parameter to `run()`. When enabled, it prints `ip`, the current
+instruction, and the stack contents _before_ every instruction executes — exactly as
+the spec requires for `minivm run --trace`.
+
+To make the trace output read like real assembly instead of Rust's debug format,
+implemented the `Display` trait for `Operation` — so `Push(7)` prints as `PUSH 7`,
+`Add` prints as `ADD`, and so on. This isn't just cosmetic: the disassembler
+(`minivm dis`) will need this exact same instruction-to-text logic, so building it
+now means it's reused later instead of duplicated.
+
+Example trace output:
+\`\`\`
+ip=0x0000 PUSH 7 stack=[]
+ip=0x0001 PUSH 3 stack=[7]
+ip=0x0002 ADD stack=[7, 3]
+ip=0x0003 PRINT stack=[10]
+\`\`\`
