@@ -1,26 +1,3 @@
-// fn main() {
-//     // why vec<i64> for the stack?
-//     // A stack only needs to add/remove from the top.
-//     // both push() and pop() to do on a Vec are fast     (O(1)).
-//     // No need for a special "stack" type — Vec already behaves like one
-//     let mut stack: Vec<i64> = Vec::new();
-
-//     stack.push(7);
-//     stack.push(3);
-
-//     // let b: Option<i64>= stack.pop();
-//     // let a: Option<i64>= stack.pop(); -> cannot add a + b as (Option<i64> + Option<i64>) can't be added as Option<i64> returns a container either Some(T), or None
-
-//     //That's why we need .unwrap() first — it opens the box and gives you the i64 inside (or crashes if the box was empty/None):
-
-//     let b = stack.pop().unwrap();
-//     let a = stack.pop().unwrap();
-
-//     stack.push(a + b);
-
-//     let result = stack.pop().unwrap();
-//     println!("result: {}", result);
-// }
 
 #[derive(Debug, Clone, Copy)]
 enum Operation {
@@ -40,11 +17,31 @@ enum Operation {
     Halt,
 }
 
+// Converts an Operation into its assembly text form (e.g. "PUSH 7").
+// Used by trace output now, and will be reused by the disassembler later.
+fn op_to_string(op: &Operation) -> String {
+    match op {
+        Operation::Push(n) => format!("PUSH {}", n),
+        Operation::Pop => "POP".to_string(),
+        Operation::Dup => "DUP".to_string(),
+        Operation::Swap => "SWAP".to_string(),
+        Operation::Add => "ADD".to_string(),
+        Operation::Sub => "SUB".to_string(),
+        Operation::Mul => "MUL".to_string(),
+        Operation::Div => "DIV".to_string(),
+        Operation::Mod => "MOD".to_string(),
+        Operation::Neg => "NEG".to_string(),
+        Operation::Load(s) => format!("LOAD {}", s),
+        Operation::Store(s) => format!("STORE {}", s),
+        Operation::Print => "PRINT".to_string(),
+        Operation::Halt => "HALT".to_string(),
+    }
+}
+
 fn trap_err(ip: usize, msg: &str) -> Result<(), String> {
     Err(format!("trap at ip=0x{:04X}: {}", ip, msg))
 }
 
-// added a `trace: bool` parameter — when true, print debug info each step
 fn run(program: Vec<Operation>, trace: bool) -> Result<(), String> {
     let mut stack: Vec<i64> = Vec::new();
     let mut ip: usize = 0;
@@ -54,9 +51,14 @@ fn run(program: Vec<Operation>, trace: bool) -> Result<(), String> {
         let instr = program[ip];
         let current_ip = ip;
 
-        // print trace info BEFORE executing the instruction
+        // uses op_to_string() instead of {:?} for readable trace output
         if trace {
-            println!("ip=0x{:04X}  {:?}  stack={:?}", current_ip, instr, stack);
+            println!(
+                "ip=0x{:04X}  {}  stack={:?}",
+                current_ip,
+                op_to_string(&instr),
+                stack
+            );
         }
 
         ip += 1;
@@ -192,7 +194,6 @@ fn main() {
         Operation::Halt,
     ];
 
-    // hardcoded true for now — later this comes from a real --trace flag
     let trace = true;
 
     if let Err(e) = run(program, trace) {
