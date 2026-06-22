@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone, Copy)]
 enum Operation {
     Push(i64),
@@ -51,7 +50,6 @@ fn run(program: Vec<Operation>, trace: bool) -> Result<(), String> {
         let instr = program[ip];
         let current_ip = ip;
 
-        // uses op_to_string() instead of {:?} for readable trace output
         if trace {
             println!(
                 "ip=0x{:04X}  {}  stack={:?}",
@@ -186,18 +184,46 @@ fn run(program: Vec<Operation>, trace: bool) -> Result<(), String> {
 }
 
 fn main() {
-    let program = vec![
-        Operation::Push(7),
-        Operation::Push(3),
-        Operation::Add,
-        Operation::Print,
-        Operation::Halt,
-    ];
+    // collect all command-line arguments into a Vec<String>
+    // args()[0] is always the program name itself, so we skip it
+    let args: Vec<String> = std::env::args().collect();
 
-    let trace = true;
-
-    if let Err(e) = run(program, trace) {
-        eprintln!("{}", e);
+    if args.len() < 2 {
+        eprintln!("Usage: minivm <subcommand> [options]");
+        eprintln!("  minivm run <file.tbc> [--trace]");
         std::process::exit(1);
+    }
+
+    let subcommand = &args[1];
+
+    match subcommand.as_str() {
+        "run" => {
+            if args.len() < 3 {
+                eprintln!("Usage: minivm run <file.tbc> [--trace]");
+                std::process::exit(1);
+            }
+
+            let filename = &args[2];
+            // check if --trace flag is present anywhere in the args
+            let trace = args.contains(&"--trace".to_string());
+
+            println!("would run: {} (trace={})", filename, trace);
+            // we'll replace this println with the real run() call
+            // once we build the assembler and have real .tbc files
+        }
+
+        "asm" => {
+            println!("assembler not built yet");
+        }
+
+        "dis" => {
+            println!("disassembler not built yet");
+        }
+
+        _ => {
+            eprintln!("unknown subcommand: {}", subcommand);
+            eprintln!("valid subcommands: run, asm, dis");
+            std::process::exit(1);
+        }
     }
 }
