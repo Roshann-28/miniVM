@@ -35,3 +35,15 @@ ip=0x0001  PUSH 3  stack=[7]
 ip=0x0002  ADD     stack=[7, 3]
 ip=0x0003  PRINT   stack=[10]
 ```
+
+**8. CLI argument parsing**
+Replaced the hardcoded `trace = true` with real command-line argument parsing using
+`std::env::args()`. The program now reads actual subcommands and flags:
+
+- `minivm run <file.tbc> [--trace]` — runs a bytecode file, optionally with trace
+- `minivm asm <file.tasm>` — assembler (not built yet)
+- `minivm dis <file.tbc>` — disassembler (not built yet)
+
+Unknown subcommands and missing arguments print a usage message and exit with code 1.
+The `--trace` flag is detected by checking if `"--trace"` appears anywhere in the
+argument list.
