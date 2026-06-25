@@ -1,4 +1,4 @@
-use crate::isa::{Operation, encode};
+use crate::isa::Operation;
 use crate::bytecode::write_bytecode;
 
 // assembles a .tasm text file into a Vec<u8> ready to write to disk
