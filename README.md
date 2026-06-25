@@ -25,25 +25,32 @@ Added a `[i64; 256]` zero-initialized `globals` array. `Store(slot)` pops into a
 Replaced `.unwrap()` calls with `Result<(), String>`. A `trap_err()` helper builds messages in the spec's exact format (`trap at ip=0x0003: stack underflow (Pop on empty stack)`). Covers stack overflow/underflow and division/modulo by zero. `main()` prints the error and exits with code 1 on failure.
 
 **7. --trace mode**
-Added a `trace: bool` parameter to `run()`, printing `ip`, the instruction, and the stack before every step. Added an `op_to_string()` function to render instructions as real assembly text (`PUSH 7` instead of `Push(7)`) — this same logic will be reused directly by the disassembler later.
+Added a `trace: bool` parameter to `run()`, printing `ip`, the instruction, and the stack before every step. Added an `op_to_string()` function to render instructions as real assembly text (`PUSH 7` instead of `Push(7)`) — reused directly by the disassembler.
 
 Example:
-
-```
-ip=0x0000  PUSH 7  stack=[]
-ip=0x0001  PUSH 3  stack=[7]
-ip=0x0002  ADD     stack=[7, 3]
-ip=0x0003  PRINT   stack=[10]
-```
+ip=0x0000 PUSH 7 stack=[]
+ip=0x0001 PUSH 3 stack=[7]
+ip=0x0002 ADD stack=[7, 3]
+ip=0x0003 PRINT stack=[10]
 
 **8. CLI argument parsing**
-Replaced the hardcoded `trace = true` with real command-line argument parsing using
-`std::env::args()`. The program now reads actual subcommands and flags:
+Real command-line argument parsing using `std::env::args()`. Three subcommands:
 
-- `minivm run <file.tbc> [--trace]` — runs a bytecode file, optionally with trace
-- `minivm asm <file.tasm>` — assembler (not built yet)
-- `minivm dis <file.tbc>` — disassembler (not built yet)
+- `minivm run <file.tbc> [--trace]` — runs a bytecode file
+- `minivm asm <file.tasm> -o <file.tbc>` — assembles text to bytecode
+- `minivm dis <file.tbc>` — disassembles bytecode back to text
 
-Unknown subcommands and missing arguments print a usage message and exit with code 1.
-The `--trace` flag is detected by checking if `"--trace"` appears anywhere in the
-argument list.
+**9. File format (`bytecode.rs`)**
+Implemented the `.tbc` binary format: magic bytes `MVM\0`, version `0x01`, code length as `u32` LE, then raw code. `write_bytecode()` encodes a program and wraps it in the header. `read_bytecode()` validates the header and returns the code bytes. `decode_all()` walks the code bytes and returns a `Vec<Operation>`.
+
+**10. Assembler (`minivm asm`)**
+Single-pass assembler in `asm.rs`. Reads `.tasm` files line by line, strips `;` comments, skips blank lines, matches mnemonics case-insensitively, and calls `encode()` from `isa.rs`. Line-numbered error messages for unknown mnemonics or bad operands. Warns if the program doesn't end with `HALT`.
+
+**11. Disassembler (`minivm dis`)**
+`dis.rs` reuses `decode_all()` from `bytecode.rs` and `op_to_string()` from `isa.rs` to walk the bytecode and print each instruction as assembly text. Round-trip verified: `asm → dis → asm` output matches the original `.tasm` for `arith.tasm`.
+
+## Test programs
+
+| File         | Expression              | Output |
+| ------------ | ----------------------- | ------ |
+| `arith.tasm` | `(7 + 3) * (9 - 4) / 5` | `10`   |
